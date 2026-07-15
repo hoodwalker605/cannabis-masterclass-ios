@@ -28,22 +28,37 @@ jobs:
         run: xcodebuild -list
 
       - name: List available simulators
-        run: xcrun simctl list devices available
+        run: xcrun simctl list devices available | grep -i iphone
 
       - name: Build (Simulator)
         run: |
           xcodebuild build \
             -project CannabisMasterclass.xcodeproj \
             -scheme CannabisMasterclass \
-            -destination 'generic/platform=iOS Simulator' \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
             -configuration Debug \
             -derivedDataPath ./DerivedData \
-            CODE_SIGNING_ALLOWED=NO \
-            | xcpretty
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: List build products
+        run: find ./DerivedData/Build/Products -name "*.app" -type d
+
+      - name: Package as IPA
+        run: |
+          APP_PATH=$(find ./DerivedData/Build/Products -name "CannabisMasterclass.app" -type d | head -1)
+          if [ -z "$APP_PATH" ]; then
+            echo "App not found, listing products:"
+            find ./DerivedData/Build/Products -type f
+            exit 1
+          fi
+          mkdir -p Payload
+          cp -r "$APP_PATH" Payload/
+          zip -r CannabisMasterclass-Simulator.zip Payload
+          rm -rf Payload
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: CannabisMasterclass-Simulator
-          path: DerivedData/Build/Products/Debug-iphonesimulator/
+          path: CannabisMasterclass-Simulator.zip
           retention-days: 7
