@@ -1,4 +1,4 @@
-import Foundation
+import SwiftUI
 import Combine
 
 // MARK: - Design System (nui.css tokens)

@@ -9,10 +9,10 @@ struct Module: Identifiable {
     let category: String
     let tags: [String]
     let description: String
+    let difficulty: Int
+    let readTime: String
     let sections: [ModuleSection]
     let quiz: [QuizQuestion]?
-    let difficulty: Int // 1-5
-    let readTime: String
 }
 
 struct ModuleSection: Identifiable {
