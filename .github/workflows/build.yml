@@ -18,49 +18,44 @@ jobs:
       - name: Select Xcode 16.2
         run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
 
+      - name: Install iOS Simulator Runtime
+        run: |
+          sudo xcodebuild -downloadPlatform iOS
+          xcrun simctl runtime add "$(xcodebuild -downloadPath)/iOS_18.2_Simulator_Runtime.dmg" 2>/dev/null || true
+
       - name: Install XcodeGen
         run: brew install xcodegen
 
       - name: Generate Xcode Project
         run: xcodegen generate
 
-      - name: List schemes
-        run: xcodebuild -list
-
-      - name: List available platforms
-        run: xcodebuild -showsdks | grep -i simulator
+      - name: List available simulators
+        run: xcrun simctl list devices available | grep -i iphone | head -5
 
       - name: Build (Simulator)
         run: |
           xcodebuild build \
             -project CannabisMasterclass.xcodeproj \
             -scheme CannabisMasterclass \
-            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
             -configuration Debug \
             -derivedDataPath ./DerivedData \
             CODE_SIGNING_ALLOWED=NO
 
-      - name: Find and package build
+      - name: Package Build
         run: |
-          echo "=== Build products ==="
-          find ./DerivedData/Build/Products -type d 2>/dev/null || echo "No products found"
-          
           APP_PATH=$(find ./DerivedData/Build/Products -name "CannabisMasterclass.app" -type d 2>/dev/null | head -1)
-
           if [ -n "$APP_PATH" ]; then
-            echo "Found app at: $APP_PATH"
             mkdir -p Payload
             cp -r "$APP_PATH" Payload/
             zip -r CannabisMasterclass-Simulator.zip Payload
             rm -rf Payload
-          else
-            echo "No .app found - build verified Swift compilation succeeds"
           fi
 
-      - name: Upload Build Artifact
-        if: hashFiles('CannabisMasterclass-Simulator.zip') != ''
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: CannabisMasterclass-Simulator
           path: CannabisMasterclass-Simulator.zip
           retention-days: 7
+          if-no-files-found: ignore
