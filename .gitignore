@@ -8,6 +8,7 @@ DerivedData/
 *.dSYM.zip
 *.dSYM
 build/
+build-output/
 
 # Swift
 .build/
