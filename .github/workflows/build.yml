@@ -27,39 +27,35 @@ jobs:
       - name: List schemes
         run: xcodebuild -list
 
+      - name: List available platforms
+        run: xcodebuild -showsdks | grep -i simulator
+
       - name: Build (Simulator)
         run: |
           xcodebuild build \
             -project CannabisMasterclass.xcodeproj \
             -scheme CannabisMasterclass \
-            -destination 'generic/platform=iOS Simulator' \
+            -sdk iphonesimulator \
             -configuration Debug \
             -derivedDataPath ./DerivedData \
             CODE_SIGNING_ALLOWED=NO
 
       - name: Find and package build
         run: |
-          echo "=== DerivedData contents ==="
-          find ./DerivedData -name "*.app" -type d 2>/dev/null || true
-          find ./DerivedData -name "*.ipa" 2>/dev/null || true
-          find ./DerivedData/Build/Products -type d 2>/dev/null || true
-
+          echo "=== Build products ==="
+          find ./DerivedData/Build/Products -type d 2>/dev/null || echo "No products found"
+          
           APP_PATH=$(find ./DerivedData/Build/Products -name "CannabisMasterclass.app" -type d 2>/dev/null | head -1)
 
-          if [ -z "$APP_PATH" ]; then
-            echo "No .app found. Listing all files in Build/Products:"
-            find ./DerivedData/Build/Products -type f 2>/dev/null || echo "Build/Products is empty or missing"
-            echo ""
-            echo "Build succeeded but artifact not found - this is expected for generic destination."
-            echo "The build verified that all Swift code compiles successfully."
-            exit 0
+          if [ -n "$APP_PATH" ]; then
+            echo "Found app at: $APP_PATH"
+            mkdir -p Payload
+            cp -r "$APP_PATH" Payload/
+            zip -r CannabisMasterclass-Simulator.zip Payload
+            rm -rf Payload
+          else
+            echo "No .app found - build verified Swift compilation succeeds"
           fi
-
-          echo "Found app at: $APP_PATH"
-          mkdir -p Payload
-          cp -r "$APP_PATH" Payload/
-          zip -r CannabisMasterclass-Simulator.zip Payload
-          rm -rf Payload
 
       - name: Upload Build Artifact
         if: hashFiles('CannabisMasterclass-Simulator.zip') != ''
