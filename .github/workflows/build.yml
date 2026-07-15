@@ -27,12 +27,15 @@ jobs:
       - name: List schemes
         run: xcodebuild -list
 
+      - name: List available simulators
+        run: xcrun simctl list devices available
+
       - name: Build (Simulator)
         run: |
           xcodebuild build \
             -project CannabisMasterclass.xcodeproj \
             -scheme CannabisMasterclass \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=18.2' \
+            -destination 'generic/platform=iOS Simulator' \
             -configuration Debug \
             -derivedDataPath ./DerivedData \
             CODE_SIGNING_ALLOWED=NO \
