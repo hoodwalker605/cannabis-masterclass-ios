@@ -1,0 +1,46 @@
+name: Build iOS App
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 15.4
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode Project
+        run: xcodegen generate
+
+      - name: List schemes
+        run: xcodebuild -list
+
+      - name: Build (Simulator)
+        run: |
+          xcodebuild build \
+            -project CannabisMasterclass.xcodeproj \
+            -scheme CannabisMasterclass \
+            -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
+            -configuration Debug \
+            -derivedDataPath ./DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CannabisMasterclass-Simulator
+          path: DerivedData/Build/Products/Debug-iphonesimulator/
+          retention-days: 7
